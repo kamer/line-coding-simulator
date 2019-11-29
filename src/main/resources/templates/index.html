@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8">
+    <title>Line Coding Simulator</title>
+    <link th:href="@{/css/bulma.css}" rel="stylesheet" type="text/css"/>
+    <link th:href="@{/css/custom.css}" rel="stylesheet" type="text/css"/>
+
+</head>
+<body>
+<!--HERO-->
+<section class="hero is-primary">
+    <div class="hero-body">
+        <div class="columns">
+            <div class="column">
+                <div class="container">
+                    <h1 class="title" style="text-align: center">
+                        <button onclick="showTextToGraph();" class="button is-link">Convert Text to Signals</button>
+                    </h1>
+                </div>
+            </div>
+            <div class="column">
+                <div class="container">
+                    <h1 class="title" style="text-align: center">
+                        <button onclick="showGraphToText();" class="button is-link">Convert Signals to Text</button>
+                    </h1>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!--TEXT TO GRAPH -->
+<div class="columns" id="text-to-graph">
+    <div class="column">
+        <div class="content-container">
+            <form th:method="post" th:action="@{/text-to-signal}">
+                <span class="title">Convert Text to Graph </span>
+                <textarea name="ttg-textInput" id="ttg-text-input" class="textarea is-medium has-fixed-size" placeholder="" required></textarea>
+                <div class="select">
+                    <select name="algorithm" required>
+                        <option value="">Select algorithm</option>
+                        <option value="UNIPOLAR_NRZ">Unipolar NRZ</option>
+                        <option value="NRZ_LEVEL">NRZ Level</option>
+                        <option value="NRZ_INVERT">NRZ Invert</option>
+                        <option value="MANCHESTER">Manchester</option>
+                        <option value="DIFFERENTIAL_MANCHESTER">Differential Manchester</option>
+                        <option value="AMI">AMI</option>
+                    </select>
+                </div>
+                <input type="submit" class="button">
+            </form>
+
+            <div id="ttg-chart-div">
+                <p class="title">Digital Wave Graph</p>
+                <span th:text="${graph} ? ${graph.algorithm} : ''"></span>
+                <div id="ttg-chart"></div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!--GRAPH TO TEXT -->
+<div class="columns" id="graph-to-text" style="display: none;">
+    <div class="column">
+        <div class="content-container">
+            <form th:method="post" th:action="@{/signal-to-text}">
+                <p class="title">Convert Graph to Text</p>
+                <div class="select">
+                    <select name="algorithm" id="algorithm-type" required>
+                        <option value="">Select algorithm</option>
+                        <option value="UNIPOLAR_NRZ">Unipolar NRZ</option>
+                        <option value="NRZ_LEVEL">NRZ Level</option>
+                        <option value="NRZ_INVERT">NRZ Invert</option>
+                        <option value="MANCHESTER">Manchester</option>
+                        <option value="DIFFERENTIAL_MANCHESTER">Differential Manchester</option>
+                        <option value="AMI">AMI</option>
+                    </select>
+                </div>
+                <br>
+                <br>
+                <label for="code-input">Encoded Input</label>
+                <input id="code-input" name="encoded-input" placeholder="e.g. 1.-1.1.1.-1..." type="text" required>
+                <br>
+                <input type="submit" class="button">
+                <div>
+                    <br>
+                    <span th:if="${decodedText}" class="title">Decoded Text</span>
+                    <span th:if="${decodedText}" class="title" th:text="' (' + ${algorithm} + '): '"></span>
+                    <span th:if="${decodedText}" th:text="${decodedText}"></span>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="http://wavedrom.com/skins/default.js" type="text/javascript"></script>
+<script src="http://wavedrom.com/wavedrom.min.js" type="text/javascript"></script>
+<script src="https://www.gstatic.com/charts/loader.js"></script>
+<script th:src="@{/js/index.js}"></script>
+
+<script th:inline="javascript">
+
+    /*<![CDATA[*/
+
+    let operation = /*[[${operation}]]*/ 'ttg';
+
+    console.log(operation);
+
+    if (operation === 'ttg' || operation == null) {
+        showTextToGraph();
+    } else {
+        showGraphToText();
+    }
+
+    /*]]>*/
+
+</script>
+
+<!--TTG CHART-->
+<script th:inline="javascript">
+
+    /*<![CDATA[*/
+
+    let graphValues = /*[[${graph}]]*/ '';
+
+    /*]]>*/
+
+    if (graphValues) {
+
+        console.log(graphValues.wave);
+
+        google.charts.load('current', {
+            callback: drawChart,
+            packages: ['bar', 'corechart']
+        });
+
+    }
+
+
+    function drawChart() {
+        var data = google.visualization.arrayToDataTable(graphValues.wave);
+
+        var options = {
+            chartArea: {
+                top: 12,
+                right: 12,
+                bottom: 24,
+                left: 24,
+                height: '100%',
+                width: '100%'
+            },
+            legend: {
+                position: 'none'
+            },
+            hAxis: {
+                viewWindow: {
+                    min: 0,
+                    max: graphValues.xAxisMax
+                },
+                gridlines: {
+                    count: graphValues.gridLineCount
+                },
+                /*textPosition: 'none'*/
+            },
+            vAxis: {
+                viewWindow: {
+                    min: -2,
+                    max: 2
+                }
+            }
+        };
+
+        var chart = new google.visualization.LineChart(document.getElementById('ttg-chart'));
+        chart.draw(data, options);
+    }
+
+</script>
+</body>
+</html>
